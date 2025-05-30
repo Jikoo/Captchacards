@@ -1,0 +1,8 @@
+main: "com.github.jikoo.captcha.CaptchaPlugin"
+name: "Captchacards"
+version: "${version}"
+api-version: "${apiversion}"
+author: Jikoo
+
+libraries:
+  - "${caffeine}"

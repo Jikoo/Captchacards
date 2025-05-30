@@ -1,0 +1,22 @@
+[versions]
+annotations = "26.0.2"
+paper = "1.21.5-R0.1-SNAPSHOT"
+planarwrappers = "4.0.0"
+paperweight = "2.0.0-beta.17"
+shadow = "8.3.6"
+errorprone-core = "2.38.0"
+errorprone-gradle = "4.2.0"
+caffeine = "3.2.0"
+
+[libraries]
+annotations = { module = "org.jetbrains:annotations", version.ref = "annotations" }
+paper-api = { module = "io.papermc.paper:paper-api", version.ref = "paper" }
+planarwrappers = { module = "com.github.jikoo:planarwrappers", version.ref = "planarwrappers" }
+errorprone-core = { module = "com.google.errorprone:error_prone_core", version.ref = "errorprone-core" }
+errorprone-gradle = { module = "net.ltgt.gradle:gradle-errorprone-plugin", version.ref = "errorprone-gradle" }
+caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
+
+[plugins]
+paperweight = { id = "io.papermc.paperweight.userdev", version.ref = "paperweight" }
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
+errorprone-gradle = { id = "net.ltgt.errorprone", version.ref = "errorprone-gradle" }
