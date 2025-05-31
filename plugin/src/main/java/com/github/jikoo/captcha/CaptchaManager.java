@@ -154,6 +154,7 @@ public class CaptchaManager {
    * @return the new blank captchacard
    */
   @Contract("-> new")
+  @SuppressWarnings("UnstableApiUsage")
   public @NotNull ItemStack newBlankCaptcha() {
     ItemStack itemStack = new ItemStack(Material.BOOK);
     itemStack.editMeta(meta -> {
@@ -238,15 +239,19 @@ public class CaptchaManager {
    * @return the captcha depth
    */
   public int getCaptchaDepth(@Nullable ItemStack item) {
+    // If the item is not a used captcha, it has a depth of 0.
     if (!isUsedCaptcha(item)) {
       return 0;
     }
+
     int depth = 1;
     ItemStack newItem;
     while (isUsedCaptcha((newItem = getItemByCaptcha(item)))) {
+      // If the unpacked item is the same, it is invalid in some way.
       if (newItem.isSimilar(item)) {
         return depth;
       }
+      // Increment depth and repeat unpack attempt on new item.
       ++depth;
       item = newItem;
     }
@@ -294,6 +299,13 @@ public class CaptchaManager {
     dataContainer.set(KEY_HASH, PersistentDataType.STRING, hash);
 
     // Add display elements for users.
+    setCaptchaContentsDisplay(hash, item, cardMeta);
+
+    card.setItemMeta(cardMeta);
+    return card;
+  }
+
+  private void setCaptchaContentsDisplay(@NotNull String hash, @NotNull ItemStack item, @NotNull ItemMeta cardMeta) {
     List<Component> cardLore = new ArrayList<>();
     Replacement hashReplacement = new HashReplacement(hash.toUpperCase(Locale.ROOT));
     Component component = lang.getComponent((String) null, Messages.ITEM_FILLED_DESCRIPTOR, hashReplacement);
@@ -312,38 +324,43 @@ public class CaptchaManager {
     cardMeta.lore(cardLore);
     cardMeta.displayName(lang.getComponent((String) null, Messages.ITEM_FILLED_NAME, Messages.ITEM_FILLED_CONTENT, contentReplacement, amountReplacement));
 
-    // Handle texturing.
-    List<String> modelStrings;
+    // Handle texturing via CustomModelData.
+    setCaptchaModelData(item, cardMeta);
+  }
+
+  @SuppressWarnings("UnstableApiUsage")
+  private void setCaptchaModelData(@NotNull ItemStack item, @NotNull ItemMeta cardMeta) {
     AtomicBoolean blank = new AtomicBoolean();
-    if (isCaptcha(
-        item,
-        pdc -> {
-          if (pdc.has(KEY_BLANK)) {
-            blank.set(true);
-            return true;
-          }
-          return pdc.has(KEY_HASH, PersistentDataType.STRING);
-        }
-    )) {
+    Predicate<PersistentDataContainer> consumer = pdc -> {
+      if (pdc.has(KEY_BLANK)) {
+        blank.set(true);
+        return true;
+      }
+      return pdc.has(KEY_HASH, PersistentDataType.STRING);
+    };
+    List<String> modelStrings;
+    if (isCaptcha(item, consumer)) {
       if (blank.get()) {
+        // For blanks, use blank identifier.
         modelStrings = List.of("captcha:blanks");
       } else {
+        // Otherwise, pull previous card type.
         ItemMeta itemMeta = item.getItemMeta();
         if (itemMeta != null) {
           modelStrings = itemMeta.getCustomModelDataComponent().getStrings();
         } else {
+          // If card type is unavailable, fall through to unknown.
           modelStrings = List.of("captcha:unknown");
         }
       }
     } else {
+      // Otherwise use the item type key.
       modelStrings = List.of("captcha:" + item.getType().key().asString());
     }
+
     CustomModelDataComponent modelData = cardMeta.getCustomModelDataComponent();
     modelData.setStrings(modelStrings);
     cardMeta.setCustomModelDataComponent(modelData);
-
-    card.setItemMeta(cardMeta);
-    return card;
   }
 
   /**
