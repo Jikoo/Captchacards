@@ -12,6 +12,8 @@ import org.jetbrains.annotations.Nullable;
 
 public class ComponentLangManager extends LanguageManager {
 
+  private static final Replacement[] COLORS = Messages.getColors().toArray(new Replacement[0]);
+
   public ComponentLangManager(@NotNull LocaleProvider provider) {
     super(provider);
   }
@@ -28,7 +30,7 @@ public class ComponentLangManager extends LanguageManager {
    * @see #getValue(String, Message)
    */
   public @Nullable Component getComponent(@Nullable String locale, @NotNull Message message) {
-    String value = getValue(locale, message, Messages.getMessages().toArray(new Replacement[0]));
+    String value = getValue(locale, message, COLORS);
     if (value == null) {
       return null;
     }
@@ -79,7 +81,7 @@ public class ComponentLangManager extends LanguageManager {
    * @see #getValue(String, Message)
    */
   public @Nullable Component getComponent(@NotNull CommandSender sender, @NotNull Message message) {
-    String value = getValue(sender, message, Messages.getMessages().toArray(new Replacement[0]));
+    String value = getValue(sender, message, COLORS);
     if (value == null) {
       return null;
     }
@@ -132,11 +134,10 @@ public class ComponentLangManager extends LanguageManager {
   }
 
   private static @NotNull Replacement[] addColors(@NotNull Replacement @NotNull [] replacements) {
-    Replacement[] colors = Messages.getMessages().toArray(new Replacement[0]);
-    Replacement[] combined = new Replacement[replacements.length + colors.length];
+    Replacement[] combined = new Replacement[replacements.length + COLORS.length];
 
     System.arraycopy(replacements, 0, combined, 0, replacements.length);
-    System.arraycopy(colors, 0, combined, replacements.length, colors.length);
+    System.arraycopy(COLORS, 0, combined, replacements.length, COLORS.length);
 
     return combined;
   }
