@@ -10,7 +10,6 @@ import com.github.jikoo.captcha.util.lang.ItemNameReplacement;
 import com.github.jikoo.captcha.util.lang.Messages;
 import com.github.jikoo.captcha.util.lang.QuantityReplacement;
 import com.github.jikoo.planarwrappers.lang.Replacement;
-import com.github.jikoo.planarwrappers.util.StringConverters;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -53,13 +52,13 @@ import java.util.logging.Logger;
 public class CaptchaManager {
 
   public static final @NotNull NamespacedKey KEY_UNCAPTCHA_RECIPE =
-      Objects.requireNonNull(StringConverters.toNamespacedKey("captcha:craft_open"));
+      Objects.requireNonNull(NamespacedKey.fromString("captcha:craft_open"));
   public static final @NotNull NamespacedKey KEY_SKIP_CONVERT =
-      Objects.requireNonNull(StringConverters.toNamespacedKey("captcha:skip_convert"));
+      Objects.requireNonNull(NamespacedKey.fromString("captcha:skip_convert"));
   public static final @NotNull NamespacedKey KEY_BLANK =
-      Objects.requireNonNull(StringConverters.toNamespacedKey("captcha:blank"));
+      Objects.requireNonNull(NamespacedKey.fromString("captcha:blank"));
   public static final @NotNull NamespacedKey KEY_HASH =
-      Objects.requireNonNull(StringConverters.toNamespacedKey("captcha:hash"));
+      Objects.requireNonNull(NamespacedKey.fromString("captcha:hash"));
   private static final int MAX_CAPTCHA_DEPTH = 2;
 
   private final LoadingCache<String, ItemStack> cache =
