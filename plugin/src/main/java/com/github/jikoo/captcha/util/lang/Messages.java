@@ -64,9 +64,9 @@ public enum Messages {
 
     ITEM_BLANK_NAME = register("item.blank.name", "<!i>{color.value}Blank Captchacard");
     ITEM_BLANK_DESCRIPTOR = register("item.blank.descriptor", "<!i>{color.hash}Blank");
-    ITEM_FILLED_NAME = register("item.filled.name", "<!i>{color.value}Captcha{color.background} of {color.end.background}{item.content}");
+    ITEM_FILLED_NAME = register("item.filled.name", "<!i>{color.value}Captcha{color.background} of {color.end.background}{quantity}{color.background}x {color.end.background}{content}");
     ITEM_FILLED_DESCRIPTOR = register("item.filled.descriptor", "<!i>{color.hash}{hash}");
-    ITEM_FILLED_CONTENT = register("item.content", "<!i>{color.value}{quantity}{color.background}x {color.end.background}{content}");
+    ITEM_FILLED_CONTENT = register("item.filled.content", "<!i>{color.value}{rootQuantity}{color.background}x {color.end.background}{rootContent}");
 
     EVENT_CRAFT_DENIED = register("messages.event.crafting_denial", "{color.value}You can't use a captchacard in place of a book!");
 

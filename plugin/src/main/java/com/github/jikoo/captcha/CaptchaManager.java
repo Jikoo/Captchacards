@@ -9,6 +9,7 @@ import com.github.jikoo.captcha.util.lang.HashReplacement;
 import com.github.jikoo.captcha.util.lang.ItemNameReplacement;
 import com.github.jikoo.captcha.util.lang.Messages;
 import com.github.jikoo.captcha.util.lang.QuantityReplacement;
+import com.github.jikoo.captcha.util.lang.SimpleReplacement;
 import com.github.jikoo.planarwrappers.lang.Replacement;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
@@ -306,26 +307,67 @@ public class CaptchaManager {
   }
 
   private void setCaptchaContentsDisplay(@NotNull String hash, @NotNull ItemStack item, @NotNull ItemMeta cardMeta) {
+    Replacement[] replacements = getItemReplacements(hash, item);
+
     List<Component> cardLore = new ArrayList<>();
-    Replacement hashReplacement = new HashReplacement(hash.toUpperCase(Locale.ROOT));
-    Component component = lang.getComponent((String) null, Messages.ITEM_FILLED_DESCRIPTOR, hashReplacement);
+    Component component = lang.getComponent((String) null, Messages.ITEM_FILLED_DESCRIPTOR, replacements);
     if (component != null) {
       cardLore.add(component);
     }
-
-    // TODO root amount
-    Replacement amountReplacement = new QuantityReplacement(item.getAmount());
-    Replacement contentReplacement = new ItemNameReplacement(item);
-    component = lang.getComponent((String) null, Messages.ITEM_FILLED_CONTENT, contentReplacement, amountReplacement);
+    component = lang.getComponent((String) null, Messages.ITEM_FILLED_CONTENT, replacements);
     if (component != null) {
       cardLore.add(component);
     }
-
     cardMeta.lore(cardLore);
-    cardMeta.displayName(lang.getComponent((String) null, Messages.ITEM_FILLED_NAME, Messages.ITEM_FILLED_CONTENT, contentReplacement, amountReplacement));
+
+    Replacement[] replAndContent = new Replacement[replacements.length + 1];
+    replAndContent[0] = Messages.ITEM_FILLED_CONTENT;
+    System.arraycopy(replacements, 0, replAndContent, 1, replacements.length);
+    cardMeta.displayName(lang.getComponent((String) null, Messages.ITEM_FILLED_NAME, replAndContent));
 
     // Handle texturing via CustomModelData.
     setCaptchaModelData(item, cardMeta);
+  }
+
+  private @NotNull Replacement @NotNull [] getItemReplacements(@NotNull String hash, @NotNull ItemStack item) {
+    Replacement[] replacements = new Replacement[5];
+
+    // Set final replacements to
+    replacements[2] = new ItemNameReplacement(item);
+    replacements[3] = new QuantityReplacement(item.getAmount());
+    replacements[4] = new HashReplacement(hash.toUpperCase(Locale.ROOT));
+
+    // If the item is not a used captcha, the root is the current item.
+    if (!isUsedCaptcha(item)) {
+      replacements[0] = new SimpleReplacement("rootContent", "{content}");
+      replacements[1] = new SimpleReplacement("rootQuantity", "{quantity}");
+      return replacements;
+    }
+
+    int rootAmount = item.getAmount();
+    ItemStack rootItem;
+    while (isUsedCaptcha((rootItem = getItemByCaptcha(item)))) {
+      // If the unpacked item is the same, it is invalid in some way.
+      if (rootItem.isSimilar(item)) {
+        break;
+      }
+      // For every stage, multiply by amount.
+      rootAmount *= rootItem.getAmount();
+      item = rootItem;
+    }
+
+    if (rootItem != null && !rootItem.isSimilar(item)) {
+      // If the fully-unpacked item exists and is valid, multiply by its amount.
+      rootAmount *= rootItem.getAmount();
+    } else {
+      // Otherwise, set root to last valid unpacking phase.
+      rootItem = item;
+    }
+
+    replacements[0] = new ItemNameReplacement("rootContent", rootItem);
+    replacements[1] = new SimpleReplacement("rootQuantity", String.valueOf(rootAmount));
+
+    return replacements;
   }
 
   @SuppressWarnings("UnstableApiUsage")

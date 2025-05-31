@@ -1,27 +1,22 @@
 package com.github.jikoo.captcha.util.lang;
 
-import com.github.jikoo.planarwrappers.lang.Replacement;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 
-public class ItemNameReplacement implements Replacement {
-
-  private final @NotNull ItemStack itemStack;
+public class ItemNameReplacement extends SimpleReplacement {
 
   public ItemNameReplacement(@NotNull ItemStack itemStack) {
-    this.itemStack = itemStack;
+    this("content", itemStack);
   }
 
-  @Override
-  public String getPlaceholder() {
-    return "{content}";
+  public ItemNameReplacement(@NotNull String placeholder, @NotNull ItemStack itemStack) {
+    super(placeholder, getNameString(itemStack));
   }
 
-  @Override
-  public String getValue() {
+  private static @NotNull String getNameString(@NotNull ItemStack itemStack) {
     if (itemStack.hasItemMeta()) {
       ItemMeta itemMeta = itemStack.getItemMeta();
       if (itemMeta != null && itemMeta.hasCustomName()) {
