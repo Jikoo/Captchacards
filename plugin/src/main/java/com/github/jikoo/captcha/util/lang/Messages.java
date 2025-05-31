@@ -73,7 +73,7 @@ public enum Messages {
     COMMAND_DENIAL_REQUIRES_PLAYER = register("command.denial.requires_player", "{color.value}This command must be run by a player!");
     COMMAND_DENIAL_CANNOT_CAPTCHA = register("command.denial.cannot_captcha", "{color.value}Cannot captcha item in main hand!");
 
-    COMMAND_BATCH_DENIAL_NOT_MAX = register("command.batch.denial.not_max", "{color.value}Max stacks only for batch captcha creation!");
+    COMMAND_BATCH_DENIAL_NOT_MAX = register("command.batch.denial.not_max", "{color.value}You must have at least one stack to batch captcha!");
     COMMAND_BATCH_DENIAL_NO_BLANKS = register("command.batch.denial.no_blanks", "{color.value}No blank captchas left to use!");
     COMMAND_BATCH_SUCCESS = register("command.batch.success", "{color.background}Filled {color.value}{quantity}{color.background} captchas!");
     COMMAND_BATCH_FREE = register("command.batch.free", "free");

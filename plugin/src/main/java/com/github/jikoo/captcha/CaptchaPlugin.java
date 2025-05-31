@@ -41,7 +41,7 @@ public class CaptchaPlugin extends JavaPlugin {
 
     // Add captchacard recipes.
     for (int i = 1; i < 5; ++i) {
-      ItemStack captchaItem = captcha.getBlankCaptchacard();
+      ItemStack captchaItem = captcha.newBlankCaptcha();
       captchaItem.setAmount(i);
       ShapelessRecipe captchaRecipe =
           new ShapelessRecipe(new NamespacedKey(this, "captcha" + i), captchaItem);

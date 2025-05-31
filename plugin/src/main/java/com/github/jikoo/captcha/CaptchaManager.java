@@ -155,7 +155,7 @@ public class CaptchaManager {
    * @return the new blank captchacard
    */
   @Contract("-> new")
-  public @NotNull ItemStack getBlankCaptchacard() {
+  public @NotNull ItemStack newBlankCaptcha() {
     ItemStack itemStack = new ItemStack(Material.BOOK);
     itemStack.editMeta(meta -> {
       meta.displayName(lang.getComponent((String) null, Messages.ITEM_BLANK_NAME));
@@ -191,14 +191,25 @@ public class CaptchaManager {
   }
 
   /**
-   * Check if an ItemStack cannot be turned into a captchacard. The only items that cannot be put
-   * into a captcha are other captchas of captchas, books, blocks with inventories, and unique
-   * items.
+   * Check if an ItemStack cannot be turned into a captchacard. The only items that cannot be put into
+   * a captcha are written books, items with inventories, and other captchas already at maximum depth.
    *
    * @param item the ItemStack to check
    * @return true if the ItemStack cannot be saved as a captchacard
    */
   public boolean canNotCaptcha(@Nullable ItemStack item) {
+    return canNotCaptcha(item, true);
+  }
+
+  /**
+   * Check if an ItemStack cannot be turned into a captchacard. The only items that cannot be put into
+   * a captcha are written books, items with inventories, and other captchas already at maximum depth.
+   *
+   * @param item the ItemStack to check
+   * @param requireMaxStacks true if the max stack size should be required
+   * @return true if the ItemStack cannot be saved as a captchacard
+   */
+  public boolean canNotCaptcha(@Nullable ItemStack item, boolean requireMaxStacks) {
     if (item == null
         || item.getType() == Material.AIR
         // Book meta has high churn, no reason to allow creation of codes that will never be reused.
@@ -207,7 +218,7 @@ public class CaptchaManager {
         // Knowledge book is specifically for usage, not for storage.
         || item.getType() == Material.KNOWLEDGE_BOOK
         // Only allow max stacks.
-        || item.getAmount() != item.getMaxStackSize()) {
+        || (requireMaxStacks && item.getAmount() != item.getMaxStackSize())) {
       return true;
     }
     if (item.hasItemMeta()) {
@@ -272,7 +283,7 @@ public class CaptchaManager {
     }
 
     // Get a new blank card to manipulate.
-    ItemStack card = getBlankCaptchacard();
+    ItemStack card = newBlankCaptcha();
     ItemMeta cardMeta = card.getItemMeta();
     if (cardMeta == null) {
       return null;
