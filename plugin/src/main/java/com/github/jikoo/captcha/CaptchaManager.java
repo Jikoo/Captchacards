@@ -14,7 +14,6 @@ import com.github.jikoo.planarwrappers.lang.Replacement;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BlockStateMeta;
@@ -37,11 +36,8 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
-import java.util.AbstractSequentialList;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -130,9 +126,16 @@ public class CaptchaManager {
     return isCaptcha(item, pdc -> pdc.has(KEY_BLANK) || pdc.has(KEY_HASH, PersistentDataType.STRING));
   }
 
-  private static boolean isCaptcha(
+  /**
+   * Check if an ItemStack is a captchacard.
+   *
+   * @param itemStack the ItemStack to check
+   * @param predicate a predicate determining if the item's PersistentDataContainer is acceptable
+   * @return true if the ItemStack is a captchacard
+   */
+  public static boolean isCaptcha(
       @Nullable ItemStack itemStack,
-      @NotNull Predicate<PersistentDataContainer> pdcConsumer
+      @NotNull Predicate<PersistentDataContainer> predicate
   ) {
     // If the item is not a book or does not have meta, it cannot be a captcha.
     if (itemStack == null || itemStack.getType() != Material.BOOK || !itemStack.hasItemMeta()) {
@@ -146,7 +149,7 @@ public class CaptchaManager {
     }
 
     // Test for correct PDC content.
-    return pdcConsumer.test(itemMeta.getPersistentDataContainer());
+    return predicate.test(itemMeta.getPersistentDataContainer());
   }
 
   /**
@@ -437,7 +440,8 @@ public class CaptchaManager {
    * @param hash the hash to get an item for
    * @return the item or {@code null} if the item has not been saved
    */
-  private @Nullable ItemStack getItemByHash(@NotNull String hash) {
+  @Nullable
+  public ItemStack getItemByHash(@NotNull String hash) {
     try {
       ItemStack itemStack = cache.get(hash);
       return itemStack != null ? new ItemStack(itemStack) : null;
@@ -476,98 +480,6 @@ public class CaptchaManager {
     }
 
     return itemHash;
-  }
-
-  /**
-   * Convert captchacard hashes to a newer format. Used to fix identical items not stacking after
-   * changes to NBT serialization.
-   *
-   * @param player the player whose inventory should be checked
-   * @return the number of captchacards affected
-   */
-  public int convert(@NotNull Player player) {
-    int conversions = 0;
-    AbstractSequentialList<Integer> depthAmounts = new LinkedList<>();
-    for (int i = 0; i < player.getInventory().getSize(); i++) {
-      ItemStack baseItem = player.getInventory().getItem(i);
-      if (!isUsedCaptcha(baseItem)) {
-        continue;
-      }
-
-      ItemMeta baseMeta = baseItem.getItemMeta();
-      if (baseMeta == null) {
-        continue;
-      }
-
-      if (baseMeta.getPersistentDataContainer().has(KEY_SKIP_CONVERT, PersistentDataType.BYTE)) {
-        continue;
-      }
-
-      String originalHash = baseMeta
-          .getPersistentDataContainer()
-          .get(KEY_HASH, PersistentDataType.STRING);
-
-      if (originalHash == null) {
-        continue;
-      }
-
-      depthAmounts.clear();
-      depthAmounts.add(baseItem.getAmount());
-
-      String hash = originalHash;
-      ItemStack storedItem;
-      // Fully de-captcha stored item.
-      while (isUsedCaptcha((storedItem = getItemByHash(hash)))) {
-        ItemMeta storedMeta = storedItem.getItemMeta();
-        if (storedMeta == null) {
-          break;
-        }
-        hash = storedMeta
-            .getPersistentDataContainer()
-            .get(KEY_HASH, PersistentDataType.STRING);
-        if (hash == null) {
-          break;
-        }
-        depthAmounts.add(storedItem.getAmount());
-      }
-
-      // If stored item is null, final captcha is invalid. Ignore.
-      if (storedItem == null) {
-        continue;
-      }
-
-      ListIterator<Integer> depthIterator = depthAmounts.listIterator(depthAmounts.size());
-      // Fully re-captcha stored item.
-      while (depthIterator.hasPrevious()) {
-        storedItem = getCaptchaForItem(storedItem);
-
-        // Problem creating new captcha, ignore.
-        if (storedItem == null) {
-          break;
-        }
-
-        storedItem.setAmount(depthIterator.previous());
-      }
-
-      if (storedItem == null) {
-        continue;
-      }
-
-      ItemMeta newMeta = storedItem.getItemMeta();
-
-      if (newMeta == null) {
-        continue;
-      }
-
-      String newHash = newMeta
-          .getPersistentDataContainer()
-          .get(KEY_HASH, PersistentDataType.STRING);
-      if (!originalHash.equals(newHash)) {
-        player.getInventory().setItem(i, storedItem);
-        conversions += storedItem.getAmount();
-      }
-    }
-    return conversions;
   }
 
   private void save(@NotNull String hash, @NotNull ItemStack item) {
