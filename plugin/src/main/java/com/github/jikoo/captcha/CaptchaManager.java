@@ -94,6 +94,15 @@ public class CaptchaManager {
   }
 
   /**
+   * Get the directory where captchacard contents will be serialized.
+   *
+   * @return the path of the directory
+   */
+  public @NotNull Path getDataDir() {
+    return this.dataDir;
+  }
+
+  /**
    * Check if an ItemStack is a blank captchacard.
    *
    * @param item the ItemStack to check

@@ -14,13 +14,16 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class CaptchaCommand extends Command implements PluginIdentifiableCommand {
 
   private final @NotNull CaptchaPlugin plugin;
   private final @NotNull ComponentLangManager lang;
-  private final @NotNull CaptchaManager captcha;
+  private final Map<String, Command> subcommands = new HashMap<>();
 
   public CaptchaCommand(
       @NotNull CaptchaPlugin plugin,
@@ -29,11 +32,11 @@ public class CaptchaCommand extends Command implements PluginIdentifiableCommand
   ) {
     super("captcha");
     setDescription("Captcha management command");
-    setUsage("/captcha <get <code>|unique>");
+    setUsage("/captcha <get <code>|unique>"); // TODO
     setPermission("captcha.command.admin"); // TODO
     this.plugin = plugin;
     this.lang = lang;
-    this.captcha = captcha;
+    subcommands.put("get", new CaptchaGetCommand(lang, captcha));
   }
 
   @Override
@@ -53,21 +56,11 @@ public class CaptchaCommand extends Command implements PluginIdentifiableCommand
 
     args[0] = args[0].toLowerCase(Locale.ROOT);
 
-    if ("get".equals(args[0])) {
-      if (args.length < 2) {
-        // TODO
-        return false;
-      }
-
-      ItemStack item = captcha.getCaptchaForHash(args[1]);
-      if (item == null) {
-        lang.sendComponent(sender, Messages.COMMAND_GET_DENIAL_INVALID);
-        return true;
-      }
-
-      player.getWorld().dropItem(player.getLocation(), item).setPickupDelay(0);
-      lang.sendComponent(sender,  Messages.COMMAND_GET_SUCCESS);
-      return true;
+    Command subcommand = subcommands.get(args[0]);
+    if (subcommand != null) {
+      String[] subArgs = new String[args.length - 1];
+      System.arraycopy(args, 1, subArgs, 0, subArgs.length);
+      return subcommand.execute(sender, commandLabel, subArgs);
     }
 
     if ("unique".equals(args[0])) {
@@ -93,7 +86,31 @@ public class CaptchaCommand extends Command implements PluginIdentifiableCommand
     return false;
   }
 
-  // TODO tab completion
+  @Override
+  public @NotNull List<String> tabComplete(
+      @NotNull CommandSender sender,
+      @NotNull String alias,
+      @NotNull String @NotNull [] args
+  ) throws IllegalArgumentException {
+    if (args.length < 1) {
+      return List.of();
+    }
+
+    if (args.length == 1) {
+      // TODO subcommand names
+      return List.of();
+    }
+
+    Command subcommand = subcommands.get(args[0].toLowerCase(Locale.ROOT));
+
+    if (subcommand == null) {
+      return List.of();
+    }
+
+    String[] subArgs = new String[args.length - 1];
+    System.arraycopy(args, 1, subArgs, 0, subArgs.length);
+    return subcommand.tabComplete(sender, alias, subArgs);
+  }
 
   @Override
   public @NotNull Plugin getPlugin() {
