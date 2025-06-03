@@ -36,7 +36,7 @@ public class UpdateCaptchaCommand extends Command implements PluginIdentifiableC
   ) {
     super("updatecaptcha");
     setDescription("Convert captchas whose hashes have changed.");
-    setPermission("captcha.command.update");
+    setPermission("captcha.command.update.use");
     this.plugin = plugin;
     this.lang = lang;
     this.captcha = captcha;
