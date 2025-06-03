@@ -3,8 +3,6 @@ package com.github.jikoo.captcha.command;
 import com.github.jikoo.captcha.CaptchaManager;
 import com.github.jikoo.captcha.util.lang.ComponentLangManager;
 import com.github.jikoo.captcha.util.lang.Messages;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -28,6 +26,7 @@ public class CaptchaGetCommand extends Command {
     this.lang = lang;
     this.captcha = captcha;
     setPermission("captcha.command.get.use");
+    setUsage(" <hash>");
   }
 
   @Override
@@ -42,8 +41,7 @@ public class CaptchaGetCommand extends Command {
     }
 
     if (args.length < 1) {
-      sender.sendMessage(Component.text().content("/captcha get <hash>").color(TextColor.color(0xFF5555)).build());
-      return true;
+      return false;
     }
 
     ItemStack item = captcha.getCaptchaForHash(args[1]);

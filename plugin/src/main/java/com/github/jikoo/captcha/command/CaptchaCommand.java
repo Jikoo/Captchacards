@@ -10,9 +10,6 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginIdentifiableCommand;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
@@ -37,6 +34,7 @@ public class CaptchaCommand extends Command implements PluginIdentifiableCommand
     this.lang = lang;
 
     subcommands.put("get", new CaptchaGetCommand(lang, captcha));
+    subcommands.put("unique", new CaptchaUniqueCommand(lang));
 
     setDescription("General captchacard management command");
     setPermissions();
@@ -89,12 +87,11 @@ public class CaptchaCommand extends Command implements PluginIdentifiableCommand
       @NotNull String commandLabel,
       @NotNull String @NotNull [] args
   ) {
-    if (!(sender instanceof Player player)) {
+    if (!(sender instanceof Player)) {
       lang.sendComponent(sender, Messages.COMMAND_DENIAL_REQUIRES_PLAYER);
       return true;
     }
     if (args.length < 1) {
-      // TODO
       return false;
     }
 
@@ -104,30 +101,29 @@ public class CaptchaCommand extends Command implements PluginIdentifiableCommand
     if (subcommand != null) {
       String[] subArgs = new String[args.length - 1];
       System.arraycopy(args, 1, subArgs, 0, subArgs.length);
-      return subcommand.execute(sender, commandLabel, subArgs);
-    }
-
-    if ("unique".equals(args[0])) {
-      ItemStack item = player.getInventory().getItemInMainHand();
-      if (!CaptchaManager.isUsedCaptcha(item)) {
-        lang.sendComponent(sender, Messages.COMMAND_UNIQUE_DENIAL_NOT_CAPTCHA);
-        return true;
+      if (!subcommand.execute(sender, commandLabel, subArgs)) {
+        sender.sendMessage(Component.text().content(getUsage(args[0], subcommand)).color(TextColor.color(0xFF5555)).build());
       }
-      ItemMeta itemMeta = item.getItemMeta();
-      if (itemMeta != null) {
-        itemMeta.getPersistentDataContainer().set(
-            CaptchaManager.KEY_SKIP_CONVERT,
-            PersistentDataType.BYTE,
-            (byte) 1);
-      }
-      item.setItemMeta(itemMeta);
-      player.getInventory().setItemInMainHand(item);
-      lang.sendComponent(sender,  Messages.COMMAND_UNIQUE_SUCCESS);
       return true;
     }
 
-    // TODO
     return false;
+  }
+
+  private @NotNull String getUsage(@NotNull String name, @NotNull Command subcommand) {
+    String usage = subcommand.getUsage();
+    StringBuilder builder = new StringBuilder("/captcha ").append(name);
+
+    if (usage.isEmpty()) {
+      return builder.toString();
+    }
+
+    int space = usage.indexOf(' ');
+    if (space < 0) {
+      return builder.toString();
+    }
+
+    return builder.append(usage.substring(space)).toString();
   }
 
   @Override
