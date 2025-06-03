@@ -4,6 +4,8 @@ import com.github.jikoo.captcha.CaptchaManager;
 import com.github.jikoo.captcha.CaptchaPlugin;
 import com.github.jikoo.captcha.util.lang.ComponentLangManager;
 import com.github.jikoo.captcha.util.lang.Messages;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginIdentifiableCommand;
@@ -31,12 +33,54 @@ public class CaptchaCommand extends Command implements PluginIdentifiableCommand
       @NotNull CaptchaManager captcha
   ) {
     super("captcha");
-    setDescription("Captcha management command");
-    setUsage("/captcha <get <code>|unique>"); // TODO
-    setPermission("captcha.command.admin"); // TODO
     this.plugin = plugin;
     this.lang = lang;
+
     subcommands.put("get", new CaptchaGetCommand(lang, captcha));
+
+    setDescription("General captchacard management command");
+    setPermissions();
+    setUsages();
+  }
+
+  private void setPermissions() {
+    StringBuilder builder = new StringBuilder();
+
+    for (Command subcommand : subcommands.values()) {
+      String permission = subcommand.getPermission();
+
+      if (permission == null || permission.isEmpty()) {
+        throw new IllegalStateException("Permission must be set!");
+      }
+
+      builder.append(permission).append(';');
+    }
+
+    setPermission(builder.substring(0, builder.length() - 1));
+  }
+
+  private void setUsages() {
+    StringBuilder builder = new StringBuilder("/captcha <");
+
+    for (Map.Entry<String, Command> entry : subcommands.entrySet()) {
+      builder.append(entry.getKey());
+
+      String usage = entry.getValue().getUsage();
+
+      if (!usage.isEmpty()) {
+        int space = usage.indexOf(' ');
+
+        if (space >= 0) {
+          builder.append(usage.substring(space));
+        }
+      }
+
+      builder.append('|');
+    }
+
+    builder.setCharAt(builder.length() - 1, '>');
+
+    setUsage(builder.toString());
   }
 
   @Override
