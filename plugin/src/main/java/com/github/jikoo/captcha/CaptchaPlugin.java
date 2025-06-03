@@ -1,11 +1,9 @@
 package com.github.jikoo.captcha;
 
-import com.github.jikoo.captcha.command.BatchCaptchaCommand;
 import com.github.jikoo.captcha.command.CaptchaCommand;
-import com.github.jikoo.captcha.command.UpdateCaptchaCommand;
-import com.github.jikoo.captcha.listener.UseListener;
 import com.github.jikoo.captcha.listener.CraftingListener;
 import com.github.jikoo.captcha.listener.MisuseListener;
+import com.github.jikoo.captcha.listener.UseListener;
 import com.github.jikoo.captcha.util.lang.ComponentLangManager;
 import com.github.jikoo.captcha.util.lang.Messages;
 import com.github.jikoo.planarwrappers.lang.Message;
@@ -16,8 +14,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapelessRecipe;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.List;
 
 /**
  * A plugin adding bulk storage in the form of captchacards.
@@ -60,14 +56,9 @@ public class CaptchaPlugin extends JavaPlugin {
     getServer().getPluginManager().registerEvents(new CraftingListener(lang, captcha), this);
     getServer().getPluginManager().registerEvents(new MisuseListener(), this);
 
-    getServer().getCommandMap().registerAll(
-        "captcha",
-        List.of(
-            new BatchCaptchaCommand(this, lang, captcha),
-            new UpdateCaptchaCommand(this, lang, captcha),
-            new CaptchaCommand(this, lang, captcha)
-        )
-    );
+    CaptchaCommand baseCommand = new CaptchaCommand(this, lang, captcha);
+    getServer().getCommandMap().register("captcha", baseCommand);
+    getServer().getCommandMap().registerAll("captcha", baseCommand.getRegisterableCommands());
   }
 
 }

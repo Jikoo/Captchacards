@@ -35,10 +35,16 @@ public class CaptchaCommand extends Command implements PluginIdentifiableCommand
 
     subcommands.put("get", new CaptchaGetCommand(lang, captcha));
     subcommands.put("unique", new CaptchaUniqueCommand(lang));
+    subcommands.put("convert", new CaptchaConvertCommand(lang, captcha));
+    subcommands.put("batch", new CaptchaBatchCommand(plugin, lang, captcha));
 
     setDescription("General captchacard management command");
     setPermissions();
     setUsages();
+  }
+
+  public List<Command> getRegisterableCommands() {
+    return subcommands.values().stream().filter(PluginIdentifiableCommand.class::isInstance).toList();
   }
 
   private void setPermissions() {

@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
-public class BatchCaptchaCommand extends Command implements PluginIdentifiableCommand {
+public class CaptchaBatchCommand extends Command implements PluginIdentifiableCommand {
 
   private static final String PERM_BASE = "captcha.command.batch.";
   private static final String PERM_FREE = PERM_BASE + "free";
@@ -31,12 +31,13 @@ public class BatchCaptchaCommand extends Command implements PluginIdentifiableCo
   private final @NotNull ComponentLangManager lang;
   private final @NotNull CaptchaManager captcha;
 
-  public BatchCaptchaCommand(
+  CaptchaBatchCommand(
       @NotNull CaptchaPlugin plugin,
       @NotNull ComponentLangManager lang,
       @NotNull CaptchaManager captcha
   ) {
     super("batchcaptcha");
+    setAliases(List.of("baptcha", "batchcap"));
     setDescription("Captcha in bulk!");
     setPermission(PERM_BASE + "use");
     this.plugin = plugin;
@@ -188,7 +189,7 @@ public class BatchCaptchaCommand extends Command implements PluginIdentifiableCo
 
   private void remove(
       int amount,
-      @NotNull BatchCaptchaCommand.MatchedItems locations,
+      @NotNull CaptchaBatchCommand.MatchedItems locations,
       @Nullable ItemStack @NotNull [] contents
   ) {
     for (int index : locations.slots()) {

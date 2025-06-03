@@ -1,19 +1,16 @@
 package com.github.jikoo.captcha.command;
 
 import com.github.jikoo.captcha.CaptchaManager;
-import com.github.jikoo.captcha.CaptchaPlugin;
 import com.github.jikoo.captcha.util.lang.ComponentLangManager;
 import com.github.jikoo.captcha.util.lang.Messages;
 import com.github.jikoo.captcha.util.lang.QuantityReplacement;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.PluginIdentifiableCommand;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -23,21 +20,15 @@ import java.util.ListIterator;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
-public class UpdateCaptchaCommand extends Command implements PluginIdentifiableCommand {
+public class CaptchaConvertCommand extends Command {
 
-  private final @NotNull CaptchaPlugin plugin;
   private final @NotNull ComponentLangManager lang;
   private final @NotNull CaptchaManager captcha;
 
-  public UpdateCaptchaCommand(
-      @NotNull CaptchaPlugin plugin,
-      @NotNull ComponentLangManager lang,
-      @NotNull CaptchaManager captcha
-  ) {
+  CaptchaConvertCommand(@NotNull ComponentLangManager lang, @NotNull CaptchaManager captcha) {
     super("updatecaptcha");
     setDescription("Convert captchas whose hashes have changed.");
     setPermission("captcha.command.update.use");
-    this.plugin = plugin;
     this.lang = lang;
     this.captcha = captcha;
   }
@@ -164,11 +155,6 @@ public class UpdateCaptchaCommand extends Command implements PluginIdentifiableC
       @NotNull String @NotNull [] args
   ) throws IllegalArgumentException {
     return List.of();
-  }
-
-  @Override
-  public @NotNull Plugin getPlugin() {
-    return plugin;
   }
 
 }
