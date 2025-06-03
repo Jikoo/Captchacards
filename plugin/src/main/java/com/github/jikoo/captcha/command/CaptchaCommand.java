@@ -92,16 +92,24 @@ public class CaptchaCommand extends Command implements PluginIdentifiableCommand
       @NotNull String alias,
       @NotNull String @NotNull [] args
   ) throws IllegalArgumentException {
+    // Shouldn't be possible, should always be at minimum an empty string.
     if (args.length < 1) {
       return List.of();
     }
 
+    args[0] = args[0].toLowerCase(Locale.ROOT);
+
     if (args.length == 1) {
-      // TODO subcommand names
-      return List.of();
+      // Completing subcommand names.
+      return subcommands.entrySet()
+          .stream()
+          .filter(entry -> entry.getKey().startsWith(args[0]) && entry.getValue().testPermissionSilent(sender))
+          .map(Map.Entry::getKey)
+          .toList();
     }
 
-    Command subcommand = subcommands.get(args[0].toLowerCase(Locale.ROOT));
+    // Find subcommand being completed.
+    Command subcommand = subcommands.get(args[0]);
 
     if (subcommand == null) {
       return List.of();
@@ -109,6 +117,7 @@ public class CaptchaCommand extends Command implements PluginIdentifiableCommand
 
     String[] subArgs = new String[args.length - 1];
     System.arraycopy(args, 1, subArgs, 0, subArgs.length);
+    // Complete subcommand with sub-arguments.
     return subcommand.tabComplete(sender, alias, subArgs);
   }
 
