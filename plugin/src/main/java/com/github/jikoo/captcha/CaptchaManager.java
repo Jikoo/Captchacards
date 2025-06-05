@@ -258,8 +258,8 @@ public class CaptchaManager {
     }
 
     int depth = 1;
-    ItemStack newItem;
-    while (isUsedCaptcha((newItem = getItemByCaptcha(item)))) {
+    ItemStack newItem = getItemByCaptcha(item);
+    while (isUsedCaptcha(newItem)) {
       // If the unpacked item is the same, it is invalid in some way.
       if (newItem.isSimilar(item)) {
         return depth;
@@ -267,6 +267,7 @@ public class CaptchaManager {
       // Increment depth and repeat unpack attempt on new item.
       ++depth;
       item = newItem;
+      newItem = getItemByCaptcha(item);
     }
     return depth;
   }
@@ -357,8 +358,8 @@ public class CaptchaManager {
     }
 
     int rootAmount = item.getAmount();
-    ItemStack rootItem;
-    while (isUsedCaptcha((rootItem = getItemByCaptcha(item)))) {
+    ItemStack rootItem = getItemByCaptcha(item);
+    while (isUsedCaptcha(rootItem)) {
       // If the unpacked item is the same, it is invalid in some way.
       if (rootItem.isSimilar(item)) {
         break;
@@ -366,6 +367,7 @@ public class CaptchaManager {
       // For every stage, multiply by amount.
       rootAmount *= rootItem.getAmount();
       item = rootItem;
+      rootItem = getItemByCaptcha(item);
     }
 
     if (rootItem != null && !rootItem.isSimilar(item)) {

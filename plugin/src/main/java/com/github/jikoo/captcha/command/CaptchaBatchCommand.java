@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
+@SuppressWarnings("MultipleNullnessAnnotations") // False positive for non-null array with nullable elements.
 public class CaptchaBatchCommand extends Command implements PluginIdentifiableCommand {
 
   private static final String PERM_BASE = "captcha.command.batch.";

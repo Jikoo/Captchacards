@@ -3,6 +3,7 @@ package com.github.jikoo.captcha.listener;
 import com.github.jikoo.captcha.CaptchaManager;
 import com.github.jikoo.captcha.util.BlockUtil;
 import com.github.jikoo.captcha.util.ItemUtil;
+import com.google.errorprone.annotations.Keep;
 import org.bukkit.Material;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
@@ -26,6 +27,7 @@ public class UseListener implements Listener {
     this.logger = logger;
   }
 
+  @Keep
   @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
   private void handleCaptcha(@NotNull InventoryClickEvent event) {
     boolean hotbar = false;
@@ -109,6 +111,7 @@ public class UseListener implements Listener {
     }
   }
 
+  @Keep
   @EventHandler(priority = EventPriority.HIGH)
   private void onPlayerInteract(@NotNull PlayerInteractEvent event) {
     if (event.getAction() != Action.RIGHT_CLICK_AIR

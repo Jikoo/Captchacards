@@ -1,6 +1,7 @@
 package com.github.jikoo.captcha.listener;
 
 import com.github.jikoo.captcha.CaptchaManager;
+import com.google.errorprone.annotations.Keep;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.enchantment.PrepareItemEnchantEvent;
@@ -14,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class MisuseListener implements Listener {
 
+  @Keep
   @EventHandler(ignoreCancelled = true)
   private void onInventoryClick(InventoryClickEvent event) {
     // Block inserting into an anvil or enchanting table.
@@ -23,32 +25,30 @@ public class MisuseListener implements Listener {
     }
     boolean isTopSlot = event.getRawSlot() == event.getView().convertSlot(event.getRawSlot());
     switch (event.getClick()) {
-      case NUMBER_KEY:
+      case NUMBER_KEY -> {
         // Hotbar swap: item on hotbar is swapped with the item in the hovered slot.
         ItemStack hotbar = event.getView().getBottomInventory().getItem(event.getHotbarButton());
         if (isTopSlot && CaptchaManager.isCaptcha(hotbar)) {
           event.setCancelled(true);
         }
-        break;
-      case LEFT:
-      case RIGHT:
+      }
+      case LEFT, RIGHT -> {
         // Left/right click: stack insert/swap or single insert.
         if (isTopSlot && CaptchaManager.isCaptcha(event.getCursor())) {
           event.setCancelled(true);
         }
-        break;
-      case SHIFT_LEFT:
-      case SHIFT_RIGHT:
+      }
+      case SHIFT_LEFT, SHIFT_RIGHT -> {
         // Shift click: push from one inventory to another.
         if (!isTopSlot && CaptchaManager.isCaptcha(event.getCurrentItem())) {
           event.setCancelled(true);
         }
-        break;
-      default:
-        break;
+      }
+      default -> {}
     }
   }
 
+  @Keep
   @EventHandler(ignoreCancelled = true)
   private void onInventoryDrag(InventoryDragEvent event) {
     // Block dragging into an anvil or enchanting table.
@@ -59,6 +59,7 @@ public class MisuseListener implements Listener {
     event.getRawSlots().removeIf(integer -> integer < topInv.getSize());
   }
 
+  @Keep
   @EventHandler
   private void onPrepareItemEnchant(@NotNull PrepareItemEnchantEvent event) {
     // Block enchanting.

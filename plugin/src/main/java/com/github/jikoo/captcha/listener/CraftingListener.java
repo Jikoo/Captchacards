@@ -3,6 +3,7 @@ package com.github.jikoo.captcha.listener;
 import com.github.jikoo.captcha.CaptchaManager;
 import com.github.jikoo.captcha.util.lang.ComponentLangManager;
 import com.github.jikoo.captcha.util.lang.Messages;
+import com.google.errorprone.annotations.Keep;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.block.Crafter;
@@ -20,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Consumer;
 
+@SuppressWarnings("MultipleNullnessAnnotations") // False positive for non-null array with nullable elements.
 public class CraftingListener implements Listener {
 
   private final @NotNull ComponentLangManager lang;
@@ -30,6 +32,7 @@ public class CraftingListener implements Listener {
     this.captchas = captchas;
   }
 
+  @Keep
   @EventHandler
   private void handleDiscover(@NotNull PlayerRecipeDiscoverEvent event) {
     // Disallow discovering the uncaptcha recipe. The recipe book can't show an accurate result.
@@ -38,6 +41,7 @@ public class CraftingListener implements Listener {
     }
   }
 
+  @Keep
   @EventHandler
   private void onPrepareItemCraft(@NotNull PrepareItemCraftEvent event) {
     CraftingInventory inventory = event.getInventory();
@@ -45,6 +49,7 @@ public class CraftingListener implements Listener {
     onRecipeUse(event.getRecipe(), inventory.getMatrix(), inventory::setResult, () -> inventory.setResult(null));
   }
 
+  @Keep
   @EventHandler
   private void onCraftItem(@NotNull CraftItemEvent event) {
     CraftingInventory inventory = event.getInventory();
@@ -60,6 +65,7 @@ public class CraftingListener implements Listener {
     );
   }
 
+  @Keep
   @EventHandler
   private void onCrafterCraft(@NotNull CrafterCraftEvent event) {
     ItemStack[] matrix;

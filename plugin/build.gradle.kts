@@ -1,6 +1,7 @@
 plugins {
   id("java")
   alias(libs.plugins.shadow)
+  alias(libs.plugins.errorprone.gradle)
 }
 
 repositories {
@@ -14,6 +15,7 @@ dependencies {
   compileOnly(libs.paper.api)
   compileOnly(libs.caffeine)
   implementation(libs.planarwrappers)
+  errorprone(libs.errorprone.core)
 }
 
 tasks.processResources {

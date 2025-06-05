@@ -14,7 +14,7 @@ import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.concurrent.atomic.AtomicReference;
@@ -50,7 +50,7 @@ public class CaptchaConvertCommand extends Command {
 
   private int convert(@NotNull Player player) {
     int conversions = 0;
-    List<Integer> depthAmounts = new LinkedList<>();
+    List<Integer> depthAmounts = new ArrayList<>();
     for (int i = 0; i < player.getInventory().getSize(); i++) {
       ItemStack baseItem = player.getInventory().getItem(i);
 
@@ -121,9 +121,16 @@ public class CaptchaConvertCommand extends Command {
     String hash = originalHash;
     ItemStack storedItem;
     // Fully de-captcha stored item.
-    while ((hash = getHash((storedItem = captcha.getItemByHash(hash)))) != null) {
-      depthAmounts.add(storedItem.getAmount());
+    while (true) {
+      storedItem = captcha.getItemByHash(hash);
+      hash = getHash(storedItem);
+      if (hash != null) {
+        depthAmounts.add(storedItem.getAmount());
+      } else {
+        break;
+      }
     }
+
     return storedItem;
   }
 
