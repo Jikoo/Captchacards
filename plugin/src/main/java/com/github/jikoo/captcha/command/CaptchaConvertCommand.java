@@ -8,7 +8,6 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
@@ -64,31 +63,23 @@ public class CaptchaConvertCommand extends Command {
       depthAmounts.clear();
       depthAmounts.add(baseItem.getAmount());
 
-      ItemStack storedItem = deconstructCaptcha(originalHash, depthAmounts);
+      ItemStack itemStack = deconstructCaptcha(originalHash, depthAmounts);
 
       // If stored item is null, final captcha is invalid. Ignore.
-      if (storedItem == null) {
+      if (itemStack == null) {
         continue;
       }
 
-      storedItem = reconstructCaptcha(storedItem, depthAmounts);
+      itemStack = reconstructCaptcha(itemStack, depthAmounts);
 
       // If reconstructed item is null, can't recreate for some reason.
-      if (storedItem == null) {
+      if (itemStack == null) {
         continue;
       }
 
-      ItemMeta newMeta = storedItem.getItemMeta();
-      if (newMeta == null) {
-        continue;
-      }
-
-      String newHash = newMeta
-          .getPersistentDataContainer()
-          .get(CaptchaManager.KEY_HASH, PersistentDataType.STRING);
-      if (!originalHash.equals(newHash)) {
-        player.getInventory().setItem(i, storedItem);
-        conversions += storedItem.getAmount();
+      if (!baseItem.equals(itemStack)) {
+        player.getInventory().setItem(i, itemStack);
+        conversions += itemStack.getAmount();
       }
     }
     return conversions;
