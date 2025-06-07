@@ -12,7 +12,9 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.logging.Logger;
@@ -119,21 +121,29 @@ public class UseListener implements Listener {
       return;
     }
 
-    ItemStack hand = ItemUtil.getHeldItem(event);
-    if (!CaptchaManager.isUsedCaptcha(hand) || BlockUtil.hasRightClickFunction(event)) {
+    EquipmentSlot hand = event.getHand();
+
+    if (hand == null) {
       return;
     }
 
-    ItemStack captchaStack = captchas.getItemByCaptcha(hand);
-    if (captchaStack == null || captchaStack.isSimilar(hand)) {
-      String hash = CaptchaManager.getHashFromCaptcha(hand);
-      logger.warning(() -> "Invalid captcha belonging to " + event.getPlayer().getName() + ": " + (hash == null ? hand.toString() : hash));
+    PlayerInventory inventory = event.getPlayer().getInventory();
+    ItemStack held = inventory.getItem(hand);
+    if (!CaptchaManager.isUsedCaptcha(held) || BlockUtil.hasRightClickFunction(event)) {
+      return;
+    }
+
+    ItemStack captchaStack = captchas.getItemByCaptcha(held);
+    if (captchaStack == null || captchaStack.isSimilar(held)) {
+      String hash = CaptchaManager.getHashFromCaptcha(held);
+      logger.warning(() -> "Invalid captcha belonging to " + event.getPlayer().getName() + ": " + (hash == null ? held.toString() : hash));
       return;
     }
 
     // TODO for last captcha, always place in slot
-    ItemUtil.decrementHeldItem(event, 1);
-    if (ItemUtil.hasSpaceFor(captchaStack, event.getPlayer().getInventory())) {
+    if (decrementedHandIsEmpty(held, inventory, hand)) {
+      inventory.setItem(hand, captchaStack);
+    } else if (ItemUtil.hasSpaceFor(captchaStack, event.getPlayer().getInventory())) {
       event.getPlayer().getInventory().addItem(captchaStack);
     } else {
       event
@@ -144,6 +154,18 @@ public class UseListener implements Listener {
     }
 
     event.getPlayer().updateInventory();
+  }
+
+  private boolean decrementedHandIsEmpty(@NotNull ItemStack held, @NotNull PlayerInventory inventory, @NotNull EquipmentSlot hand) {
+    int amount = held.getAmount() - 1;
+    if (amount > 0) {
+      held.setAmount(amount);
+    } else {
+      // We'll clobber item anyway.
+      return false;
+    }
+    inventory.setItem(hand, held);
+    return true;
   }
 
 }
