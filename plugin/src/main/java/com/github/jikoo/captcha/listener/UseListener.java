@@ -2,7 +2,6 @@ package com.github.jikoo.captcha.listener;
 
 import com.github.jikoo.captcha.CaptchaManager;
 import com.github.jikoo.captcha.util.BlockUtil;
-import com.github.jikoo.captcha.util.ItemUtil;
 import com.google.errorprone.annotations.Keep;
 import org.bukkit.Material;
 import org.bukkit.entity.Item;
@@ -13,11 +12,15 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.logging.Logger;
 
@@ -34,86 +37,201 @@ public class UseListener implements Listener {
   @Keep
   @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
   private void handleCaptcha(@NotNull InventoryClickEvent event) {
-    boolean hotbar = false;
-    switch (event.getClick()) {
-      case NUMBER_KEY:
-        hotbar = true;
-        break;
-      case LEFT:
-      case RIGHT:
-        if (event.getCursor().getType() == Material.AIR
-            || event.getCurrentItem() == null
-            || event.getCurrentItem().getType() == Material.AIR) {
-          return;
-        }
-        break;
-      case CONTROL_DROP:
-      case CREATIVE:
-      case DOUBLE_CLICK:
-      case DROP:
-      case MIDDLE:
-      case SHIFT_LEFT:
-      case SHIFT_RIGHT:
-      case WINDOW_BORDER_LEFT:
-      case WINDOW_BORDER_RIGHT:
-      case UNKNOWN:
-      default:
-        return;
-    }
-    ItemStack blankCaptcha;
-    ItemStack toCaptcha;
-    if (hotbar) {
-      blankCaptcha = event.getView().getBottomInventory().getItem(event.getHotbarButton());
-      toCaptcha = event.getCurrentItem();
-    } else {
-      blankCaptcha = event.getCurrentItem();
-      toCaptcha = event.getCursor();
-    }
+    CaptchaAction action = switch (event.getClick()) {
+      case LEFT, RIGHT -> new NormalCaptcha(event);
+      case NUMBER_KEY -> new HotbarCaptcha(event);
+      case SWAP_OFFHAND -> new OffHandCaptcha(event);
+      default -> null;
+    };
 
-    if (toCaptcha == null
-        || !CaptchaManager.isBlankCaptcha(blankCaptcha)
-        || captchas.canNotCaptcha(toCaptcha)
-        || CaptchaManager.isBlankCaptcha(toCaptcha)) {
+    if (action == null) {
       return;
     }
 
-    ItemStack captchaItem = captchas.getCaptchaForItem(toCaptcha);
+    ItemStack blank = action.getBlank();
+    ItemStack content = action.getContent();
+
+    if (captchas.canNotCaptcha(content)
+        || !CaptchaManager.isBlankCaptcha(blank)
+        || CaptchaManager.isBlankCaptcha(content)) {
+      return;
+    }
+
+    ItemStack captchaItem = captchas.getCaptchaForItem(content);
     event.setResult(Event.Result.DENY);
 
     if (captchaItem == null) {
       return;
     }
 
-    // Decrement captcha stack
-    if (hotbar) {
-      event
-          .getView()
-          .getBottomInventory()
-          .setItem(event.getHotbarButton(), ItemUtil.decrement(blankCaptcha, 1));
-      event.setCurrentItem(null);
-    } else {
-      event.setCurrentItem(ItemUtil.decrement(blankCaptcha, 1));
-      // No alternative. Functions fine.
-      event.setCursor(null);
+    // Consume item and decrement captcha stack.
+    action.setContent(null);
+    blank.setAmount(blank.getAmount() - 1);
+    action.setBlank(blank.isEmpty() ? ItemStack.of(Material.AIR) : blank);
+
+    if (addToInventories(event, captchaItem) || action.addOverflowSafe(captchaItem)) {
+      return;
     }
 
-    // Add to bottom inventory first
-    int leftover =
-        ItemUtil.getAddFailures(event.getView().getBottomInventory().addItem(captchaItem));
-    if (leftover > 0) {
-      // Add to top, bottom was full.
-      leftover = ItemUtil.getAddFailures(event.getView().getTopInventory().addItem(captchaItem));
+    // Dropping item failed for hotbar/off-hand swap. Undo changes.
+    blank.setAmount(blank.getAmount() + 1);
+    action.setBlank(blank);
+    action.setContent(content);
+  }
+
+  /**
+   * This method is specifically for adding an item with amount 1! Higher amounts may cause inconsistent losses.
+   */
+  private boolean addToInventories(@NotNull InventoryClickEvent event, ItemStack captchaItem) {
+    InventoryView view = event.getView();
+    Inventory[] inventories;
+    if (event.getSlot() == event.getRawSlot()) {
+      // If the mouse is in the top inventory, prefer it.
+      inventories = new Inventory[2];
+      inventories[0] = view.getTopInventory();
+      inventories[1] = view.getBottomInventory();
+    } else if (view.getType() != InventoryType.CRAFTING) {
+      // If the mouse is in the bottom inventory and the view is not the player's default view, use both.
+      inventories = new Inventory[2];
+      inventories[0] = view.getBottomInventory();
+      inventories[1] = view.getTopInventory();
+    } else {
+      // Otherwise, the upper inventory is the player's 2x2 crafting grid and should not be used.
+      inventories = new Inventory[1];
+      inventories[0] = view.getBottomInventory();
     }
-    if (leftover > 0) {
-      if (hotbar) {
-        // TODO fire event and respect cancellation
-        // Drop rather than delete.
-        event.getWhoClicked().getWorld().dropItem(event.getWhoClicked().getLocation(), captchaItem);
-      } else {
-        // Set cursor to captcha.
-        event.setCursor(captchaItem);
+
+    ItemStack[][] allContents = new ItemStack[inventories.length][0];
+
+    for (int i = 0; i < inventories.length; ++i) {
+      Inventory inventory = inventories[i];
+      ItemStack[] contents = inventory.getStorageContents();
+
+      // Store contents for later use.
+      allContents[i] = contents;
+
+      // Add to existing stacks.
+      addToLikeStacks(contents, captchaItem);
+      if (captchaItem.isEmpty()) {
+        inventory.setStorageContents(contents);
+        return true;
       }
     }
+
+    // Add to empty slot.
+    for (int i = 0; i < inventories.length; ++i) {
+      Inventory inventory = inventories[i];
+      ItemStack[] contents = allContents[i];
+      if (addToEmptyStack(contents, captchaItem)) {
+        inventory.setStorageContents(contents);
+        return true;
+      }
+    }
+
+    // No slots where item can fit. Should never happen - we always consume an item.
+    return false;
+  }
+
+  private interface CaptchaAction {
+
+    @Nullable ItemStack getBlank();
+
+    @Nullable ItemStack getContent();
+
+    void setBlank(@Nullable ItemStack blank);
+
+    void setContent(@Nullable ItemStack content);
+
+    boolean addOverflowSafe(@NotNull ItemStack captcha);
+
+  }
+
+  private record NormalCaptcha(InventoryClickEvent event) implements CaptchaAction {
+
+    @Override
+    public @NotNull ItemStack getBlank() {
+      return event.getCursor();
+    }
+
+    @Override
+    public @Nullable ItemStack getContent() {
+      return event.getCurrentItem();
+    }
+
+    @Override
+    public void setBlank(@Nullable ItemStack blank) {
+      event.setCurrentItem(blank);
+    }
+
+    @Override
+    public void setContent(@Nullable ItemStack content) {
+      event.getView().setCursor(content);
+    }
+
+    @Override
+    public boolean addOverflowSafe(@NotNull ItemStack captcha) {
+      event.getView().setCursor(captcha);
+      return true;
+    }
+
+  }
+
+  private record HotbarCaptcha(InventoryClickEvent event) implements CaptchaAction {
+
+    @Override
+    public ItemStack getBlank() {
+      return event.getView().getBottomInventory().getItem(event.getHotbarButton());
+    }
+
+    @Override
+    public ItemStack getContent() {
+      return event.getCurrentItem();
+    }
+
+    @Override
+    public void setBlank(@Nullable ItemStack blank) {
+      event.getView().getBottomInventory().setItem(event.getHotbarButton(), blank);
+    }
+
+    @Override
+    public void setContent(@Nullable ItemStack content) {
+      event.setCurrentItem(content);
+    }
+
+    @Override
+    public boolean addOverflowSafe(@NotNull ItemStack captcha) {
+      return event.getWhoClicked().dropItem(captcha) != null;
+    }
+
+  }
+
+  private record OffHandCaptcha(InventoryClickEvent event) implements CaptchaAction {
+
+    @Override
+    public @NotNull ItemStack getBlank() {
+      return event.getWhoClicked().getInventory().getItemInOffHand();
+    }
+
+    @Override
+    public @Nullable ItemStack getContent() {
+      return event.getCurrentItem();
+    }
+
+    @Override
+    public void setBlank(@Nullable ItemStack blank) {
+      event.getWhoClicked().getInventory().setItemInOffHand(blank);
+    }
+
+    @Override
+    public void setContent(@Nullable ItemStack content) {
+      event.setCurrentItem(content);
+    }
+
+    @Override
+    public boolean addOverflowSafe(@NotNull ItemStack captcha) {
+      return event.getWhoClicked().dropItem(captcha) != null;
+    }
+
   }
 
   @Keep
