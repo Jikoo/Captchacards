@@ -1,11 +1,8 @@
 package com.github.jikoo.captcha.util;
 
 import org.bukkit.Material;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.PlayerInventory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,7 +30,7 @@ public enum ItemUtil {
    * @param amount the amount to reduce the ItemStack by
    * @return the reduced ItemStack
    */
-  public @NotNull static ItemStack decrement(@Nullable ItemStack itemStack, int amount) {
+  public static @NotNull ItemStack decrement(@Nullable ItemStack itemStack, int amount) {
     if (itemStack == null || itemStack.getType() == Material.AIR) {
       return ItemStack.of(Material.AIR);
     }
@@ -43,33 +40,6 @@ public enum ItemUtil {
       itemStack = ItemStack.of(Material.AIR);
     }
     return itemStack;
-  }
-
-  public static void decrementHeldItem(@NotNull PlayerInteractEvent event, int amount) {
-    boolean main = isMainHand(event);
-    PlayerInventory inv = event.getPlayer().getInventory();
-    setHeldItem(inv, main, decrement(getHeldItem(inv, main), amount));
-  }
-
-  public static boolean isMainHand(@NotNull PlayerInteractEvent event) {
-    return event.getHand() == EquipmentSlot.HAND;
-  }
-
-  public @NotNull static ItemStack getHeldItem(@NotNull PlayerInteractEvent event) {
-    return getHeldItem(event.getPlayer().getInventory(), isMainHand(event));
-  }
-
-  private @NotNull static ItemStack getHeldItem(@NotNull PlayerInventory inv, boolean mainHand) {
-    return mainHand ? inv.getItemInMainHand() : inv.getItemInOffHand();
-  }
-
-  public static void setHeldItem(
-      @NotNull PlayerInventory inv, boolean mainHand, @Nullable ItemStack item) {
-    if (mainHand) {
-      inv.setItemInMainHand(item);
-    } else {
-      inv.setItemInOffHand(item);
-    }
   }
 
   /**

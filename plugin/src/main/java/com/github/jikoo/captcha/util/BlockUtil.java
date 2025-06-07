@@ -16,8 +16,8 @@ import org.bukkit.block.data.type.Observer;
 import org.bukkit.block.data.type.RedstoneRail;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryHolder;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.RayTraceResult;
 import org.jetbrains.annotations.NotNull;
 
@@ -37,8 +37,13 @@ public enum BlockUtil {
       return true;
     }
 
-    ItemStack hand = ItemUtil.getHeldItem(event);
-    Material handType = hand.getType();
+    EquipmentSlot hand = event.getHand();
+    Material handType;
+    if (hand == null) {
+      handType = Material.AIR;
+    } else {
+      handType = event.getPlayer().getInventory().getItem(hand).getType();
+    }
 
     if (blockType == Material.END_STONE) {
       // Special case: player is probably attempting to bottle dragon's breath
