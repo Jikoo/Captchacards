@@ -142,6 +142,7 @@ public class CaptchaManager {
    * @param predicate a predicate determining if the item's PersistentDataContainer is acceptable
    * @return true if the ItemStack is a captchacard
    */
+  @Contract("null, _ -> false")
   public static boolean isCaptcha(
       @Nullable ItemStack itemStack,
       @NotNull Predicate<PersistentDataContainer> predicate
@@ -210,6 +211,7 @@ public class CaptchaManager {
    * @param item the ItemStack to check
    * @return true if the ItemStack cannot be saved as a captchacard
    */
+  @Contract("null -> true")
   public boolean canNotCaptcha(@Nullable ItemStack item) {
     return canNotCaptcha(item, true);
   }
@@ -222,6 +224,7 @@ public class CaptchaManager {
    * @param requireMaxStacks true if the max stack size should be required
    * @return true if the ItemStack cannot be saved as a captchacard
    */
+  @Contract("null, _ -> true")
   public boolean canNotCaptcha(@Nullable ItemStack item, boolean requireMaxStacks) {
     if (item == null
         || item.getType() == Material.AIR
