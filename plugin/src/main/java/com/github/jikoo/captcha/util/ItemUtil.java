@@ -1,7 +1,6 @@
 package com.github.jikoo.captcha.util;
 
 import org.bukkit.Material;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -40,34 +39,6 @@ public enum ItemUtil {
       itemStack = ItemStack.of(Material.AIR);
     }
     return itemStack;
-  }
-
-  /**
-   * Checks if there is space in an Inventory to add an ItemStack.
-   *
-   * @param is the ItemStack
-   * @param inv the Inventory to check
-   * @return true if the ItemStack can be fully added
-   */
-  public static boolean hasSpaceFor(@Nullable ItemStack is, @NotNull Inventory inv) {
-    if (is == null || is.getType() == Material.AIR) {
-      return true;
-    }
-    int toAdd = is.getAmount();
-    int maxStack = is.getMaxStackSize();
-    for (ItemStack invStack : inv.getStorageContents()) {
-      if (invStack == null || invStack.getType() == Material.AIR) {
-        return true;
-      }
-      if (!invStack.isSimilar(is)) {
-        continue;
-      }
-      toAdd -= maxStack - invStack.getAmount();
-      if (toAdd <= 0) {
-        return true;
-      }
-    }
-    return false;
   }
 
 }

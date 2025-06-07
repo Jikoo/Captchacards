@@ -5,6 +5,8 @@ import com.github.jikoo.captcha.util.BlockUtil;
 import com.github.jikoo.captcha.util.ItemUtil;
 import com.google.errorprone.annotations.Keep;
 import org.bukkit.Material;
+import org.bukkit.entity.Item;
+import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -104,6 +106,7 @@ public class UseListener implements Listener {
     }
     if (leftover > 0) {
       if (hotbar) {
+        // TODO fire event and respect cancellation
         // Drop rather than delete.
         event.getWhoClicked().getWorld().dropItem(event.getWhoClicked().getLocation(), captchaItem);
       } else {
@@ -127,7 +130,8 @@ public class UseListener implements Listener {
       return;
     }
 
-    PlayerInventory inventory = event.getPlayer().getInventory();
+    Player player = event.getPlayer();
+    PlayerInventory inventory = player.getInventory();
     ItemStack held = inventory.getItem(hand);
     if (!CaptchaManager.isUsedCaptcha(held) || BlockUtil.hasRightClickFunction(event)) {
       return;
@@ -136,36 +140,110 @@ public class UseListener implements Listener {
     ItemStack captchaStack = captchas.getItemByCaptcha(held);
     if (captchaStack == null || captchaStack.isSimilar(held)) {
       String hash = CaptchaManager.getHashFromCaptcha(held);
-      logger.warning(() -> "Invalid captcha belonging to " + event.getPlayer().getName() + ": " + (hash == null ? held.toString() : hash));
+      logger.warning(() -> "Invalid captcha belonging to " + player.getName() + ": " + (hash == null ? held.toString() : hash));
       return;
     }
 
-    // TODO for last captcha, always place in slot
-    if (decrementedHandIsEmpty(held, inventory, hand)) {
+    if (decrementedHandIsEmpty(inventory, hand, held)) {
+      // If this was the last captcha, place the contents directly in the same slot.
       inventory.setItem(hand, captchaStack);
-    } else if (ItemUtil.hasSpaceFor(captchaStack, event.getPlayer().getInventory())) {
-      event.getPlayer().getInventory().addItem(captchaStack);
-    } else {
-      event
-          .getPlayer()
-          .getWorld()
-          .dropItem(event.getPlayer().getEyeLocation(), captchaStack)
-          .setVelocity(event.getPlayer().getLocation().getDirection().multiply(0.4));
+      return;
     }
 
-    event.getPlayer().updateInventory();
+    ItemStack[] contents = inventory.getStorageContents();
+    if (addOrDrop(player, contents, captchaStack)) {
+      // Update inventory contents.
+      inventory.setStorageContents(contents);
+    } else {
+      // If dropping excess was denied, cannot open. Undo hand modification.
+      held.setAmount(held.getAmount() + 1);
+      inventory.setItem(hand, held);
+    }
   }
 
-  private boolean decrementedHandIsEmpty(@NotNull ItemStack held, @NotNull PlayerInventory inventory, @NotNull EquipmentSlot hand) {
+  private boolean decrementedHandIsEmpty(
+      @NotNull PlayerInventory inventory,
+      @NotNull EquipmentSlot hand,
+      @NotNull ItemStack held
+  ) {
     int amount = held.getAmount() - 1;
-    if (amount > 0) {
-      held.setAmount(amount);
-    } else {
-      // We'll clobber item anyway.
-      return false;
+
+    if (amount <= 0) {
+      // Don't bother setting slot to air - we'll clobber consumed card with contents.
+      return true;
     }
+
+    // Update item.
+    held.setAmount(amount);
     inventory.setItem(hand, held);
+    return false;
+  }
+
+  private boolean addOrDrop(@NotNull Player player, ItemStack @NotNull [] contents, @NotNull ItemStack added) {
+    if (added.getType() == Material.AIR) {
+      // Air is always "added" successfully.
+      return true;
+    }
+
+    // Add to existing stacks first.
+    addToLikeStacks(contents, added);
+
+    // Add any remainder to first empty slot.
+    if (added.getAmount() > 0 && !addToEmptyStack(contents, added)) {
+      // Drop any remainder.
+      Item item = player.dropItem(added);
+      // If item was not added to world, drop was cancelled.
+      return item != null;
+    }
+
     return true;
+  }
+
+  private void addToLikeStacks(ItemStack @NotNull [] contents, @NotNull ItemStack added) {
+    int remainderToAdd = added.getAmount();
+
+    for (ItemStack content : contents) {
+      // If the stack is not similar, skip.
+      if (content == null || !content.isSimilar(added)) {
+        continue;
+      }
+
+      int contentAmount = content.getAmount();
+      int addable = content.getMaxStackSize() - contentAmount;
+
+      // If the stack is full, skip.
+      if (addable <= 0) {
+        continue;
+      }
+
+      if (addable < remainderToAdd) {
+        // Add number possible to existing stack.
+        content.setAmount(content.getMaxStackSize());
+        remainderToAdd -= addable;
+      } else {
+        // If entire amount to add fits, finish.
+        content.setAmount(contentAmount + remainderToAdd);
+        remainderToAdd = 0;
+        break;
+      }
+    }
+
+    added.setAmount(remainderToAdd);
+  }
+
+  private boolean addToEmptyStack(ItemStack @NotNull [] contents, @NotNull ItemStack added) {
+    for (int i = 0; i < contents.length; ++i) {
+      ItemStack content = contents[i];
+      if (content == null || content.isEmpty()) {
+        // There should be no oversized stacks here - the original contents were an in-inventory item.
+        // Directly set item rather than worry about spreading out oversized.
+        contents[i] = added;
+        return true;
+      }
+    }
+
+    // No free slots.
+    return false;
   }
 
 }
