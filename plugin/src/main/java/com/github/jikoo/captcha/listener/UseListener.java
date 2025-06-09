@@ -149,13 +149,13 @@ public class UseListener implements Listener {
   private record NormalCaptcha(InventoryClickEvent event) implements CaptchaAction {
 
     @Override
-    public @NotNull ItemStack getBlank() {
-      return event.getCursor();
+    public @Nullable ItemStack getBlank() {
+      return event.getCurrentItem();
     }
 
     @Override
-    public @Nullable ItemStack getContent() {
-      return event.getCurrentItem();
+    public @NotNull ItemStack getContent() {
+      return event.getCursor();
     }
 
     @Override
