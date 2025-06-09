@@ -4,11 +4,11 @@ import com.github.jikoo.captcha.CaptchaManager;
 import com.google.errorprone.annotations.Keep;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.enchantment.EnchantItemEvent;
 import org.bukkit.event.enchantment.PrepareItemEnchantEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.AnvilInventory;
-import org.bukkit.inventory.EnchantingInventory;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
@@ -18,9 +18,8 @@ public class MisuseListener implements Listener {
   @Keep
   @EventHandler(ignoreCancelled = true)
   private void onInventoryClick(InventoryClickEvent event) {
-    // Block inserting into an anvil or enchanting table.
-    Inventory topInv = event.getView().getTopInventory();
-    if (!(topInv instanceof AnvilInventory) && !(topInv instanceof EnchantingInventory)) {
+    // Block inserting into an anvil.
+    if (!(event.getView().getTopInventory() instanceof AnvilInventory)) {
       return;
     }
     boolean isTopSlot = event.getRawSlot() == event.getView().convertSlot(event.getRawSlot());
@@ -51,17 +50,25 @@ public class MisuseListener implements Listener {
   @Keep
   @EventHandler(ignoreCancelled = true)
   private void onInventoryDrag(InventoryDragEvent event) {
-    // Block dragging into an anvil or enchanting table.
+    // Block dragging into an anvil.
     Inventory topInv = event.getView().getTopInventory();
-    if (!(topInv instanceof AnvilInventory) && !(topInv instanceof EnchantingInventory)) {
-      return;
+    if (topInv instanceof AnvilInventory) {
+      event.getRawSlots().removeIf(integer -> integer < topInv.getSize());
     }
-    event.getRawSlots().removeIf(integer -> integer < topInv.getSize());
   }
 
   @Keep
   @EventHandler
   private void onPrepareItemEnchant(@NotNull PrepareItemEnchantEvent event) {
+    // Block enchanting.
+    if (CaptchaManager.isCaptcha(event.getItem())) {
+      event.setCancelled(true);
+    }
+  }
+
+  @Keep
+  @EventHandler
+  private void onItemEnchant(@NotNull EnchantItemEvent event) {
     // Block enchanting.
     if (CaptchaManager.isCaptcha(event.getItem())) {
       event.setCancelled(true);
