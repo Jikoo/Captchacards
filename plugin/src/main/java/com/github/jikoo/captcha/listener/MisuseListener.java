@@ -2,7 +2,9 @@ package com.github.jikoo.captcha.listener;
 
 import com.github.jikoo.captcha.CaptchaManager;
 import com.google.errorprone.annotations.Keep;
+import io.papermc.paper.event.player.PlayerPurchaseEvent;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.enchantment.EnchantItemEvent;
 import org.bukkit.event.enchantment.PrepareItemEnchantEvent;
@@ -11,6 +13,7 @@ import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.AnvilInventory;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.MerchantInventory;
 import org.jetbrains.annotations.NotNull;
 
 public class MisuseListener implements Listener {
@@ -71,6 +74,18 @@ public class MisuseListener implements Listener {
   private void onItemEnchant(@NotNull EnchantItemEvent event) {
     // Block enchanting.
     if (CaptchaManager.isCaptcha(event.getItem())) {
+      event.setCancelled(true);
+    }
+  }
+
+  @Keep
+  @EventHandler(priority = EventPriority.LOWEST)
+  private void onTrade(PlayerPurchaseEvent event) {
+    if (!(event.getPlayer().getOpenInventory().getTopInventory() instanceof MerchantInventory merchant)) {
+      return;
+    }
+
+    if (CaptchaManager.isCaptcha(merchant.getItem(0)) || CaptchaManager.isCaptcha(merchant.getItem(1))) {
       event.setCancelled(true);
     }
   }
