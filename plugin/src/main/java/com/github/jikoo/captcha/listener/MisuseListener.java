@@ -10,6 +10,7 @@ import org.bukkit.event.enchantment.EnchantItemEvent;
 import org.bukkit.event.enchantment.PrepareItemEnchantEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.inventory.TradeSelectEvent;
 import org.bukkit.inventory.AnvilInventory;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -71,7 +72,7 @@ public class MisuseListener implements Listener {
 
   @Keep
   @EventHandler
-  private void onItemEnchant(@NotNull EnchantItemEvent event) {
+  private void onEnchantItem(@NotNull EnchantItemEvent event) {
     // Block enchanting.
     if (CaptchaManager.isCaptcha(event.getItem())) {
       event.setCancelled(true);
@@ -80,7 +81,7 @@ public class MisuseListener implements Listener {
 
   @Keep
   @EventHandler(priority = EventPriority.LOWEST)
-  private void onTrade(PlayerPurchaseEvent event) {
+  private void onPlayerPurchase(@NotNull PlayerPurchaseEvent event) {
     if (!(event.getPlayer().getOpenInventory().getTopInventory() instanceof MerchantInventory merchant)) {
       return;
     }
@@ -88,6 +89,11 @@ public class MisuseListener implements Listener {
     if (CaptchaManager.isCaptcha(merchant.getItem(0)) || CaptchaManager.isCaptcha(merchant.getItem(1))) {
       event.setCancelled(true);
     }
+  }
+
+  @Keep
+  @EventHandler
+  private void onTradeSelect(@NotNull TradeSelectEvent event) {
   }
 
 }
